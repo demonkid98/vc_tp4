@@ -5,7 +5,7 @@
 #######################################
 
 
-PROG = gradient
+PROG = gradient interest_point
 
 all : $(PROG)
 
@@ -17,6 +17,7 @@ LDFLAGS   =  -g -lm
 
 
 gradient: gradient.o Util.o
+interest_point: interest_point.o Util.o
 
 clean :
 	@rm -f *.o
