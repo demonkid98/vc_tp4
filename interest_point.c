@@ -4,7 +4,7 @@
 #include <math.h>
 
 int maxval = 255;
-float *sobel_x, *sobel_y;
+float *sobel_x, *sobel_y, *binomial_3;
 
 float gradient_1d(gray *map, int i, int j, int rows, int cols, float *mask) {
   if (i - 1 < 0 || i + 1 > rows || j - 1 < 0 || j + 1 > cols) {
@@ -38,7 +38,7 @@ float gradient_xy(gray *map, int i, int j, int rows, int cols) {
   return gradient_x * gradient_y;
 }
 
-gray *filter(float *gradient, int rows, int cols) {
+gray *float_to_image(float *gradient, int rows, int cols) {
   float min_mag = 0;
   float max_mag = 0;
   for (int i=0; i<rows * cols; i++) {
@@ -58,6 +58,54 @@ gray *filter(float *gradient, int rows, int cols) {
   }
   return out;
 }
+
+float filter_gradient_pixel(float *gradient, int i, int j, int rows, int cols, float *mask) {
+  int index = i * cols + j;
+  if (i - 1 < 0 || i + 1 > rows || j - 1 < 0 || j + 1 > cols) {
+    return gradient[index];
+  }
+
+  float val = 0.0f;
+  for (int i1 = i - 1; i1 <= i + 1; i1++) {
+    for (int i2 = j - 1; i2 <= j + 1; i2++) {
+      int mask_index = (i1 - i + 1) * (2 * 1 + 1) + (i2 - j + 1);
+      val += (float) gradient[index] * mask[mask_index];
+    }
+  }
+  return val;
+}
+
+float *filter_gradient(float *gradient, int rows, int cols, float *mask) {
+  float *out = malloc(rows * cols * sizeof(float));
+
+  for (int i=0; i<rows; i++) {
+    for(int j=0; j<cols; j++) {
+      out[i * cols + j] = filter_gradient_pixel(gradient, i, j, rows, cols, mask);
+    }
+  }
+
+  return out;
+}
+
+float *harris(float *grad_x2, float *grad_y2, float *grad_xy, float alpha, int rows, int cols) {
+  float *out = malloc(rows * cols * sizeof(float));
+  int index;
+  float det;
+  float trace;
+
+  for (int i=0; i<rows; i++) {
+    for(int j=0; j<cols; j++) {
+      index = i * cols + j;
+      det = grad_x2[index] * grad_y2[index] - 2 * grad_xy[index];
+      trace = grad_x2[index] + grad_y2[index];
+
+      out[index] = det - alpha * trace * trace;
+    }
+  }
+
+  return out;
+}
+
 
 float *sobel_mask_x() {
   printf("Sobel x\n");
@@ -89,20 +137,38 @@ float *sobel_mask_y() {
   return mask;
 }
 
+float *binomial_3_mask() {
+  printf("Binomial 3x3\n");
+  float *mask = malloc(sizeof(float) * 9);
+  mask[0] = 1.0f / 16;
+  mask[1] = 2.0f / 16;
+  mask[2] = 1.0f / 16;
+  mask[3] = 2.0f / 16;
+  mask[4] = 4.0f / 16;
+  mask[5] = 2.0f / 16;
+  mask[6] = 1.0f / 16;
+  mask[7] = 2.0f / 16;
+  mask[8] = 1.0f / 16;
+  return mask;
+}
+
+
 
 int main(int argc, char* argv[]) {
   FILE* ifp, *ofp;
   gray* graymap;
   int ich1, ich2, rows, cols, pgmraw;
   int i, j;
+  float harris_alpha;
 
   sobel_x = sobel_mask_x();
   sobel_y = sobel_mask_y();
+  binomial_3 = binomial_3_mask();
 
 
   /* Arguments */
-  if ( argc != 3 ){
-    printf("\nUsage: %s file \n\n", argv[0]);
+  if ( argc != 4 ){
+    printf("\nUsage: %s [file-in] [file-out] [harris-alpha]\n\n", argv[0]);
     exit(0);
   }
 
@@ -118,6 +184,8 @@ int main(int argc, char* argv[]) {
     printf("error in opening file %s\n", argv[2]);
     exit(1);
   }
+
+  harris_alpha = atof(argv[3]);
 
   /*  Magic number reading */
   ich1 = getc( ifp );
@@ -176,7 +244,19 @@ int main(int argc, char* argv[]) {
     }
   }
 
-  gray *out = filter(grad_xy_image, rows, cols);
+  float *grad_x2_image_filtered = filter_gradient(grad_x2_image, rows, cols, binomial_3);
+  float *grad_y2_image_filtered = filter_gradient(grad_y2_image, rows, cols, binomial_3);
+  float *grad_xy_image_filtered = filter_gradient(grad_xy_image, rows, cols, binomial_3);
+
+  float *harris_image = harris(grad_x2_image_filtered, grad_y2_image_filtered, grad_xy_image_filtered, harris_alpha, rows, cols);
+
+  // gray *out = float_to_image(grad_x2_image, rows, cols);
+  // gray *out = float_to_image(grad_y2_image, rows, cols);
+  // gray *out = float_to_image(grad_xy_image, rows, cols);
+  // gray *out = float_to_image(grad_x2_image_filtered, rows, cols);
+  // gray *out = float_to_image(grad_y2_image_filtered, rows, cols);
+  // gray *out = float_to_image(grad_xy_image_filtered, rows, cols);
+  gray *out = float_to_image(harris_image, rows, cols);
 
   for (i=0; i<rows; i++) {
     for(j=0; j<cols; j++) {
