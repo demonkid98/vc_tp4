@@ -7,7 +7,7 @@ int maxval = 255;
 float *sobel_x, *sobel_y, *binomial_3;
 
 float gradient_1d(gray *map, int i, int j, int rows, int cols, float *mask) {
-  if (i - 1 < 0 || i + 1 > rows || j - 1 < 0 || j + 1 > cols) {
+  if (i - 1 < 0 || i + 1 >= rows || j - 1 < 0 || j + 1 >= cols) {
     return 0;
   }
 
@@ -61,7 +61,7 @@ gray *float_to_image(float *gradient, int rows, int cols) {
 
 float filter_gradient_pixel(float *gradient, int i, int j, int rows, int cols, float *mask) {
   int index = i * cols + j;
-  if (i - 1 < 0 || i + 1 > rows || j - 1 < 0 || j + 1 > cols) {
+  if (i - 1 < 0 || i + 1 >= rows || j - 1 < 0 || j + 1 >= cols) {
     return gradient[index];
   }
 
@@ -69,7 +69,8 @@ float filter_gradient_pixel(float *gradient, int i, int j, int rows, int cols, f
   for (int i1 = i - 1; i1 <= i + 1; i1++) {
     for (int i2 = j - 1; i2 <= j + 1; i2++) {
       int mask_index = (i1 - i + 1) * (2 * 1 + 1) + (i2 - j + 1);
-      val += (float) gradient[index] * mask[mask_index];
+      int img_index = i1 * cols + i2;
+      val += (float) gradient[img_index] * mask[mask_index];
     }
   }
   return val;
@@ -96,7 +97,7 @@ float *harris(float *grad_x2, float *grad_y2, float *grad_xy, float alpha, int r
   for (int i=0; i<rows; i++) {
     for(int j=0; j<cols; j++) {
       index = i * cols + j;
-      det = grad_x2[index] * grad_y2[index] - 2 * grad_xy[index];
+      det = grad_x2[index] * grad_y2[index] - grad_xy[index] * grad_xy[index];
       trace = grad_x2[index] + grad_y2[index];
 
       out[index] = det - alpha * trace * trace;
