@@ -176,7 +176,8 @@ gray *float_to_image(float *gradient, int rows, int cols) {
 }
 \end{lstlisting}
 
-\paragraph{Results}
+\paragraph{Results} The illustrations can be seen on figure \ref{fig-gradient}.
+
 \begin{figure}[!htb]
 \centering
 \includegraphics[width=192px]{boat3x3_5_grad_x.png}
@@ -188,6 +189,45 @@ gray *float_to_image(float *gradient, int rows, int cols) {
 
 
 \section{Interest Point Detection}
+\subsection{Gradient $I^2_x$, $I^2_y$, $I_{xy}$}
+We use the following functions computing $I^2_x$, $I^2_y$, and $I_{x,y}$ for each pixel $(i, j)$:
+
+\begin{lstlisting}[frame=single]
+float gradient_x2(gray *map, int i, int j, int rows, int cols) {
+  float gradient_x = gradient_1d(map, i, j, rows, cols, sobel_x);
+  return gradient_x * gradient_x;
+}
+\end{lstlisting}
+
+\begin{lstlisting}[frame=single]
+float gradient_y2(gray *map, int i, int j, int rows, int cols) {
+  float gradient_y = gradient_1d(map, i, j, rows, cols, sobel_y);
+  return gradient_y * gradient_y;
+}
+\end{lstlisting}
+
+\begin{lstlisting}[frame=single]
+float gradient_xy(gray *map, int i, int j, int rows, int cols) {
+  float gradient_x = gradient_1d(map, i, j, rows, cols, sobel_x);
+  float gradient_y = gradient_1d(map, i, j, rows, cols, sobel_y);
+  return gradient_x * gradient_y;
+}
+\end{lstlisting}
+
+\paragraph{Results} The illustrations can be seen on figure \ref{fig-gradient-square}.
+
+\begin{figure}[!htb]
+\centering
+\includegraphics[width=192px]{boat3x3_5_grad_x2.png}
+\includegraphics[width=192px]{boat3x3_5_grad_y2.png}
+\includegraphics[width=192px]{boat3x3_5_grad_xy.png}
+\caption{From left to right, gradient $I_x^2$, gradient $I_y^2$, gradient $I_{xy}$ of the test subject}
+\label{fig-gradient-square}
+\end{figure}
+
+
+
+
 
 \begin{lstlisting}[frame=single]
 \end{lstlisting}
