@@ -154,7 +154,7 @@ float *binomial_3_mask() {
   return mask;
 }
 
-float *global_maxima(float *array, float *sorted_array, int nb_maxima, int rows, int cols) {
+float *maxima(float *array, float *sorted_array, int nb_maxima, int rows, int cols) {
   int size = rows * cols;
   float *out = malloc(size * sizeof(float));
   for (int i = 0; i < size; i++) {
@@ -167,14 +167,13 @@ float *global_maxima(float *array, float *sorted_array, int nb_maxima, int rows,
   return out;
 }
 
-float *local_maxima(float *array, float *sorted_array, int nb_maxima, int rows, int cols) {
-  int size = rows * cols;
-  float *out = malloc(size * sizeof(float));
+float *suppress_non_local_max(float *array, int rows, int cols) {
+  float *out = malloc(rows * cols * sizeof(float));
+  int index;
   for (int i = 0; i < rows; i++) {
     for (int j = 0; j < cols; j++) {
-      int index = i * cols + j;
-      if (array[index] >= sorted_array[size - nb_maxima]
-        && array[index] > array[(i - 1) * cols + j - 1]
+      index = i * cols + j;
+      if (array[index] > array[(i - 1) * cols + j - 1]
         && array[index] > array[(i - 1) * cols + j]
         && array[index] > array[(i - 1) * cols + j + 1]
         && array[index] > array[i * cols + j - 1]
@@ -294,8 +293,13 @@ int main(int argc, char* argv[]) {
   memcpy(sorted_harris, harris_image, cols * rows * sizeof(float));
   qsort(sorted_harris, cols * rows, sizeof(float), cmp_float);
 
-  float *harris_maxima = global_maxima(harris_image, sorted_harris, nb_maxima, rows, cols);
-  float *harris_lmaxima = local_maxima(harris_image, sorted_harris, nb_maxima, rows, cols);
+  float *non_local_harris = suppress_non_local_max(harris_image, rows, cols);
+  float *sorted_non_local_harris = malloc(cols * rows * sizeof(float));
+  memcpy(sorted_non_local_harris, non_local_harris, cols * rows * sizeof(float));
+  qsort(sorted_non_local_harris, cols * rows, sizeof(float), cmp_float);
+
+  float *harris_maxima = maxima(harris_image, sorted_harris, nb_maxima, rows, cols);
+  float *harris_lmaxima = maxima(non_local_harris, sorted_non_local_harris, nb_maxima, rows, cols);
   // gray *out = float_to_image(grad_x2_image, rows, cols);
   // gray *out = float_to_image(grad_y2_image, rows, cols);
   // gray *out = float_to_image(grad_xy_image, rows, cols);
