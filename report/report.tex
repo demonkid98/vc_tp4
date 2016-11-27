@@ -262,6 +262,17 @@ float *harris(float *grad_x2, float *grad_y2, float *grad_xy, float alpha, int r
 }
 \end{lstlisting}
 
+This function is applied on a filtered version of $I^2_x$, $I^2_y$, $I_{xy}$ because without filtering, they always nullify each other when computing $detC$. Here we use binomial filter with $3\times3$-size neighborhood area.
+
+\begin{lstlisting}[frame=single]
+float *grad_x2_image_filtered = filter(grad_x2_image, rows, cols, binomial_3);
+float *grad_y2_image_filtered = filter(grad_y2_image, rows, cols, binomial_3);
+float *grad_xy_image_filtered = filter(grad_xy_image, rows, cols, binomial_3);
+
+float *harris_image = harris(grad_x2_image_filtered, grad_y2_image_filtered, grad_xy_image_filtered, harris_alpha, rows, cols);
+\end{lstlisting}
+
+
 \paragraph{Results} The illustrations can be seen on Figure \ref{fig-harris}.
 
 \begin{figure}[!htb]
