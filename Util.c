@@ -1,7 +1,7 @@
 /* Some useful functions to read, write PBM, PGM, PPM files
 **
 **
-** E.B. 
+** E.B.
 */
 
 #include <stdio.h>
@@ -90,4 +90,8 @@ void pm_erreur(char *texte)
 {
   fprintf(stderr, "\n%s \n\n", texte);
   exit(1);
+}
+
+int cmp_float(const void *a, const void *b) {
+  return (int)(*(float *) a - *(float *) b);
 }

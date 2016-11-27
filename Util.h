@@ -10,3 +10,5 @@ unsigned char pm_getrawbyte(FILE* file);
 int pm_getint( FILE* file);
 
 void pm_erreur(char *);
+
+int cmp_float(const void *a, const void *b);
