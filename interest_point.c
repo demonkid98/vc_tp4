@@ -2,6 +2,7 @@
 #include <stdio.h>
 #include "Util.h"
 #include <math.h>
+#include <string.h>
 
 int maxval = 255;
 float *sobel_x, *sobel_y, *binomial_3;
@@ -153,12 +154,48 @@ float *binomial_3_mask() {
   return mask;
 }
 
+float *global_maxima(float *array, float *sorted_array, int nb_maxima, int rows, int cols) {
+  int size = rows * cols;
+  float *out = malloc(size * sizeof(float));
+  for (int i = 0; i < size; i++) {
+    if (array[i] < sorted_array[size - nb_maxima]) {
+      out[i] = 0;
+    } else {
+      out[i] = array[i];
+    }
+  }
+  return out;
+}
 
+float *local_maxima(float *array, float *sorted_array, int nb_maxima, int rows, int cols) {
+  int size = rows * cols;
+  float *out = malloc(size * sizeof(float));
+  for (int i = 0; i < rows; i++) {
+    for (int j = 0; j < cols; j++) {
+      int index = i * cols + j;
+      if (array[index] >= sorted_array[size - nb_maxima]
+        && array[index] > array[(i - 1) * cols + j - 1]
+        && array[index] > array[(i - 1) * cols + j]
+        && array[index] > array[(i - 1) * cols + j + 1]
+        && array[index] > array[i * cols + j - 1]
+        && array[index] > array[i * cols + j + 1]
+        && array[index] > array[(i + 1) * cols + j - 1]
+        && array[index] > array[(i + 1) * cols + j]
+        && array[index] > array[(i + 1) * cols + j + 1]
+      ) {
+        out[index] = array[index];
+      } else {
+        out[index] = 0;
+      }
+    }
+  }
+  return out;
+}
 
 int main(int argc, char* argv[]) {
   FILE* ifp, *ofp;
   gray* graymap;
-  int ich1, ich2, rows, cols, pgmraw;
+  int ich1, ich2, rows, cols, pgmraw, nb_maxima;
   int i, j;
   float harris_alpha;
 
@@ -168,8 +205,8 @@ int main(int argc, char* argv[]) {
 
 
   /* Arguments */
-  if ( argc != 4 ){
-    printf("\nUsage: %s [file-in] [file-out] [harris-alpha]\n\n", argv[0]);
+  if ( argc != 5 ){
+    printf("\nUsage: %s [file-in] [file-out] [harris-alpha] [nb_maxima]\n\n", argv[0]);
     exit(0);
   }
 
@@ -187,6 +224,7 @@ int main(int argc, char* argv[]) {
   }
 
   harris_alpha = atof(argv[3]);
+  nb_maxima = atoi(argv[4]);
 
   /*  Magic number reading */
   ich1 = getc( ifp );
@@ -249,15 +287,24 @@ int main(int argc, char* argv[]) {
   float *grad_y2_image_filtered = filter_gradient(grad_y2_image, rows, cols, binomial_3);
   float *grad_xy_image_filtered = filter_gradient(grad_xy_image, rows, cols, binomial_3);
 
+  // float *harris_image = harris(grad_x2_image, grad_y2_image, grad_xy_image, harris_alpha, rows, cols);
   float *harris_image = harris(grad_x2_image_filtered, grad_y2_image_filtered, grad_xy_image_filtered, harris_alpha, rows, cols);
 
+  float *sorted_harris = malloc(cols * rows * sizeof(float));
+  memcpy(sorted_harris, harris_image, cols * rows * sizeof(float));
+  qsort(sorted_harris, cols * rows, sizeof(float), cmp_float);
+
+  float *harris_maxima = global_maxima(harris_image, sorted_harris, nb_maxima, rows, cols);
+  float *harris_lmaxima = local_maxima(harris_image, sorted_harris, nb_maxima, rows, cols);
   // gray *out = float_to_image(grad_x2_image, rows, cols);
   // gray *out = float_to_image(grad_y2_image, rows, cols);
   // gray *out = float_to_image(grad_xy_image, rows, cols);
   // gray *out = float_to_image(grad_x2_image_filtered, rows, cols);
   // gray *out = float_to_image(grad_y2_image_filtered, rows, cols);
   // gray *out = float_to_image(grad_xy_image_filtered, rows, cols);
-  gray *out = float_to_image(harris_image, rows, cols);
+  // gray *out = float_to_image(harris_image, rows, cols);
+  // gray *out = float_to_image(harris_maxima, rows, cols);
+  gray *out = float_to_image(harris_lmaxima, rows, cols);
 
   for (i=0; i<rows; i++) {
     for(j=0; j<cols; j++) {
