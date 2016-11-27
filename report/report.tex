@@ -176,7 +176,7 @@ gray *float_to_image(float *gradient, int rows, int cols) {
 }
 \end{lstlisting}
 
-\paragraph{Results} The illustrations can be seen on figure \ref{fig-gradient}.
+\paragraph{Results} The illustrations can be seen on Figure \ref{fig-gradient}.
 
 \begin{figure}[!htb]
 \centering
@@ -214,7 +214,7 @@ float gradient_xy(gray *map, int i, int j, int rows, int cols) {
 }
 \end{lstlisting}
 
-\paragraph{Results} The illustrations can be seen on figure \ref{fig-gradient-square}.
+\paragraph{Results} The illustrations can be seen on Figure \ref{fig-gradient-square}.
 
 \begin{figure}[!htb]
 \centering
@@ -224,6 +224,69 @@ float gradient_xy(gray *map, int i, int j, int rows, int cols) {
 \caption{From left to right, gradient $I_x^2$, gradient $I_y^2$, gradient $I_{xy}$ of the test subject}
 \label{fig-gradient-square}
 \end{figure}
+
+\subsection{Harris function}
+The Harris function value for each pixel is computed by the following formula:
+\begin{equation}
+H = detC - \alpha * trace^2C
+\label{eq-harris}
+\end{equation}
+with matrix $C$ being:
+\begin{equation}
+C = \left[
+\begin{matrix}
+I^2_x & I_{xy} \\
+I_{xy} & I^2_y
+\end{matrix}
+\right]
+\end{equation}
+
+\paragraph{Implementation} We use the following function to compute the Harris value on each pixel:
+\begin{lstlisting}[frame=single]
+float *harris(float *grad_x2, float *grad_y2, float *grad_xy, float alpha, int rows, int cols) {
+  float *out = malloc(rows * cols * sizeof(float));
+  int index;
+  float det;
+  float trace;
+
+  for (int i = 0; i < rows; i++) {
+    for (int j = 0; j < cols; j++) {
+      index = i * cols + j;
+      det = grad_x2[index] * grad_y2[index] - grad_xy[index] * grad_xy[index];
+      trace = grad_x2[index] + grad_y2[index];
+      out[index] = det - alpha * trace * trace;
+    }
+  }
+
+  return out;
+}
+\end{lstlisting}
+
+\paragraph{Results} The illustrations can be seen on Figure \ref{fig-harris}.
+
+\begin{figure}[!htb]
+\centering
+\includegraphics[width=192px]{boat3x3_5_harris_000.png}
+\includegraphics[width=192px]{boat3x3_5_harris_004.png}
+\includegraphics[width=192px]{boat3x3_5_harris_010.png}
+\includegraphics[width=192px]{boat3x3_5_harris_100.png}
+\caption{From left to right, Harris function result with $\alpha=\{0, 0.04, 0.1, 1\}$ respectively}
+\label{fig-harris}
+\end{figure}
+
+The illustrations are made of Harris values that are stretched to $(0, 255)$ range for display purposes. Before stretching, the majority of Harris values are $0$ on the \textit{non-interesting} parts of the original image. They are the \textit{background}, pixels with the most dominant intensity, of the output images. As can be seen from the output images, contours are displayed with lower intensity than the background, while corners are displayed with higher intensity. This means, the original Harris values for contours are negative while that for corners are positive. By changing the coefficient $\alpha$ in Harris formula (Equation \ref{eq-harris}), the contours can be blended into the background for low $\alpha$ (i.e $\alpha=0$), while the corners will become unrecognizable for high $\alpha$ (i.e $\alpha=1$).
+
+\begin{lstlisting}[frame=single]
+\end{lstlisting}
+
+\begin{lstlisting}[frame=single]
+\end{lstlisting}
+
+\begin{lstlisting}[frame=single]
+\end{lstlisting}
+
+\begin{lstlisting}[frame=single]
+\end{lstlisting}
 
 
 
