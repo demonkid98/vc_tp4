@@ -1,3 +1,5 @@
+report/report.*
+!report/report.tex
 .DS_STORE
 *.o
 gradient
